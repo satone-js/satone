@@ -1,3 +1,4 @@
+#!/usr/bin/env bun
 import { createServer, type Plugin } from "vite";
 import solid from "vite-plugin-solid";
 import pages from "vite-plugin-pages";

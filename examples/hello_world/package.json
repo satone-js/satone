@@ -1,0 +1,11 @@
+{
+  "name": "hello-world",
+  "scripts": {
+    "dev": "satone dev"
+  },
+  "dependencies": {
+    "elysia": "^1.3.8",
+    "satone": "workspace:*",
+    "solid-js": "^1.9.9"
+  }
+}
