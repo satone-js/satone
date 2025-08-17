@@ -17,10 +17,8 @@
         "vite-plugin-solid": "^2.11.8",
       },
       "devDependencies": {
-        "@types/bun": "latest",
-      },
-      "peerDependencies": {
-        "typescript": "^5",
+        "@types/bun": "^1.2.20",
+        "typescript": "^5.9.2",
       },
     },
   },

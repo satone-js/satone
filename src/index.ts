@@ -239,5 +239,5 @@ const vite = await createServer({
   logLevel: "silent",
 });
 
-console.log(new Date(), "[vite]: http://localhost:300");
+console.log(new Date(), "[vite]: http://localhost:3000");
 await vite.listen(3000);
