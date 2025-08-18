@@ -1,6 +1,7 @@
 {
   "name": "hello-world",
   "scripts": {
+    "build": "satone build",
     "dev": "satone dev"
   },
   "dependencies": {
