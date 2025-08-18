@@ -1,5 +1,6 @@
 import { createResource, createSignal, Suspense } from "solid-js";
-import { api, client } from "satone";
+import { client } from "satone/client";
+import { api } from "satone/server";
 import { t } from "elysia";
 
 export const server = api((app, path) =>

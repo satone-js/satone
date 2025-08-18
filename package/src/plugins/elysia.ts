@@ -77,7 +77,9 @@ export const elysia = (): Plugin => {
         }
       });
     },
+
     transform(code, id) {
+      // Make sure we're only transforming files inside routes.
       if (!id.startsWith(ROUTES_PATH)) return;
 
       const ast = parse(code, {
@@ -85,66 +87,67 @@ export const elysia = (): Plugin => {
         plugins: ["typescript", "jsx"],
       });
 
-      // traverse(ast, {
-      //   ExportNamedDeclaration(path) {
-      //     const decl = path.node.declaration;
-
-      //     if (t.isVariableDeclaration(decl)) {
-      //       decl.declarations = decl.declarations.filter(
-      //         (d) =>
-      //           !(
-      //             t.isIdentifier(d.id) &&
-      //             HTTP_METHODS.has(d.id.name.toUpperCase())
-      //           )
-      //       );
-
-      //       if (decl.declarations.length === 0) {
-      //         path.remove();
-      //       }
-      //     }
-
-      //     if (t.isFunctionDeclaration(decl) && decl.id) {
-      //       if (HTTP_METHODS.has(decl.id.name.toUpperCase())) {
-      //         path.remove();
-      //       }
-      //     }
-      //   },
-      // });
-
-      const used = new Set<string>();
       traverse(ast, {
-        Identifier(path) {
-          if (
-            t.isImportSpecifier(path.parent) ||
-            t.isImportDefaultSpecifier(path.parent) ||
-            t.isImportNamespaceSpecifier(path.parent) ||
-            t.isFunctionDeclaration(path.parent) ||
-            t.isVariableDeclarator(path.parent)
-          )
-            return;
+        // Remove any exported `server` declaration.
+        ExportNamedDeclaration(path) {
+          const decl = path.node.declaration;
 
-          used.add(path.node.name);
-        },
-      });
+          if (t.isVariableDeclaration(decl)) {
+            // We're removing the `server` identifier out of all declarations.
+            decl.declarations = decl.declarations.filter(
+              (d) =>
+                !(t.isIdentifier(d.id) && d.id.name.toLowerCase() === "server")
+            );
 
-      traverse(ast, {
-        ImportDeclaration(path) {
-          path.node.specifiers = path.node.specifiers.filter((spec) => {
-            if (
-              t.isImportSpecifier(spec) ||
-              t.isImportDefaultSpecifier(spec) ||
-              t.isImportNamespaceSpecifier(spec)
-            ) {
-              return used.has(spec.local.name);
+            // If there's no declarations anymore, we can remove the export directly.
+            if (decl.declarations.length === 0) {
+              path.remove();
             }
-            return true;
-          });
-
-          if (path.node.specifiers.length === 0) {
-            path.remove();
           }
         },
       });
+
+      {
+        // Get all used identifiers, ...
+        const used = new Set<string>();
+        traverse(ast, {
+          Identifier(path) {
+            if (
+              t.isImportSpecifier(path.parent) ||
+              t.isImportDefaultSpecifier(path.parent) ||
+              t.isImportNamespaceSpecifier(path.parent) ||
+              t.isFunctionDeclaration(path.parent) ||
+              t.isVariableDeclarator(path.parent)
+            )
+              return;
+
+            used.add(path.node.name);
+          },
+        });
+
+        // ... and remove unused ones.
+        //
+        // This is done in a hope to remove any imported file from `api()` call
+        // so the frontend does not have any server-side files.
+        traverse(ast, {
+          ImportDeclaration(path) {
+            path.node.specifiers = path.node.specifiers.filter((spec) => {
+              if (
+                t.isImportSpecifier(spec) ||
+                t.isImportDefaultSpecifier(spec) ||
+                t.isImportNamespaceSpecifier(spec)
+              ) {
+                return used.has(spec.local.name);
+              }
+              return true;
+            });
+
+            if (path.node.specifiers.length === 0) {
+              path.remove();
+            }
+          },
+        });
+      }
 
       const output = generate(ast, { retainLines: true }, code);
 

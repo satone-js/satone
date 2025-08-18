@@ -14,6 +14,7 @@ export const router = (): Plugin[] => {
       },
     }),
     {
+      enforce: "pre",
       name: "@satone/router",
       async configureServer() {
         const process = async () => setServerState(await reload());
