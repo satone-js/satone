@@ -1,10 +1,7 @@
-import { Glob } from "bun";
 import { join } from "node:path";
-import { mkdir, writeFile } from "node:fs/promises";
-
-const CACHE_FOLDER = join(process.cwd(), "node_modules", ".satone");
-const ROUTES_PATH = join(process.cwd(), "src", "routes");
-const GLOB = new Glob("**/*.ts[x]");
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { GLOB, ROUTES_PATH, CACHE_FOLDER } from "../utils/constants";
+import { containsServerExport, getAST } from "../utils/ast";
 
 const BANNER =
   `
@@ -30,8 +27,11 @@ const generateEdenTypes = async () => {
   const routes: string[] = [];
 
   for await (const file of GLOB.scan(ROUTES_PATH)) {
-    const imports = await import(join(ROUTES_PATH, file));
-    if (!imports.server) continue;
+    const code = await readFile(join(ROUTES_PATH, file), "utf8");
+
+    // Check if there's a server export in this route.
+    const ast = getAST(code);
+    if (!containsServerExport(ast)) continue;
 
     const route = "/" + file.replace("index", "").replace(/\.ts[x]/, "");
 
