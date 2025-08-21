@@ -2,9 +2,11 @@ import { createResource, createSignal, Suspense } from "solid-js";
 import { client } from "satone/client";
 import { api } from "satone/server";
 import { t } from "elysia";
+import { A } from "@solidjs/router";
+import { something } from "../utils/something";
 
 export const server = api((app, path) =>
-  app.post(path, ({ body }) => `Hello, ${body.name}`, {
+  app.post(path, ({ body }) => something(body.name) as string, {
     body: t.Object({
       name: t.String(),
     }),
@@ -23,6 +25,7 @@ export default function View() {
     <div>
       <h1>Hello World, this is the /abcd page</h1>
       <p>Yes, this is rendered as SolidJS!</p>
+      <A href="/">Go to /</A>
 
       <div>
         <input
