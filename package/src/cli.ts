@@ -17,6 +17,8 @@ switch (command) {
     break;
   }
   case "build": {
-    console.log("TODO");
+    const { createBuild } = await import("./server/build");
+    await createBuild();
+    break;
   }
 }
