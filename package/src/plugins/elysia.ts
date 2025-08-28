@@ -4,8 +4,23 @@ import type { Plugin } from "vite";
 import generate from "@babel/generator";
 import { parse } from "@babel/parser";
 import { state } from "../server/state";
-import { ROUTES_PATH } from "../utils/constants";
-import { cleanServerExport, pruneUnusedImports } from "../utils/ast";
+import {
+  BUILD_FOLDER,
+  GLOB,
+  ROUTES_PATH,
+  SERVER_FOLDER,
+} from "../utils/constants";
+import {
+  cleanServerExport,
+  cleanViewExport,
+  containsViewExport,
+  getAST,
+  pruneUnusedImports,
+} from "../utils/ast";
+import { join, relative } from "node:path";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { Glob } from "bun";
+import { generateProdServerFile } from "../generator/prod";
 
 export const elysia = (): Plugin => {
   return {
@@ -77,6 +92,11 @@ export const elysia = (): Plugin => {
       });
     },
 
+    /**
+     * - Removes unused imports
+     * - Prunes the `export const server` variable which contains API
+     *   source code and should not be distributed to front-end.
+     */
     transform(code, id) {
       // Make sure we're only transforming files inside routes.
       if (!id.startsWith(ROUTES_PATH)) return;
@@ -94,6 +114,51 @@ export const elysia = (): Plugin => {
       return {
         code: output.code,
       };
+    },
+
+    async generateBundle(client) {
+      const now = Date.now();
+      console.log("\n");
+
+      // Let's create `.satone` production build folder.
+      await rm(BUILD_FOLDER, { force: true, recursive: true });
+      await mkdir(BUILD_FOLDER);
+
+      // We want to take the pre-generated JS bundles from `node_modules/.satone/server`
+      // because they're already made without extra imports.
+      const GLOB = new Glob("**/*.js");
+
+      // Find all routes.
+      const paths: string[] = [];
+      for await (const file of GLOB.scan(SERVER_FOLDER)) {
+        const path = join(SERVER_FOLDER, file);
+        paths.push(path);
+      }
+
+      const entrypoint = join(BUILD_FOLDER, "index.ts");
+      await writeFile(entrypoint, generateProdServerFile(paths), "utf8");
+
+      const bundles = await Bun.build({
+        entrypoints: [entrypoint],
+        packages: "bundle",
+        splitting: true,
+        target: "bun",
+        outdir: join(BUILD_FOLDER, "server"),
+      });
+
+      await rm(entrypoint);
+
+      for (const bundle of bundles.outputs) {
+        console.log(
+          relative(process.cwd(), bundle.path),
+          `(${bundle.size} bytes)`
+        );
+      }
+
+      console.log(`✓ built in ${Date.now() - now}ms\n`);
+
+      // Let's now manipulate the destination of the Vite output!
+      client.dir = join(BUILD_FOLDER, "client");
     },
   };
 };

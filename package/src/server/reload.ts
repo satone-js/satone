@@ -1,14 +1,9 @@
 import { Elysia } from "elysia";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import swagger from "@elysiajs/swagger";
-import {
-  CACHE_FOLDER,
-  GLOB,
-  ROUTES_PATH,
-  SERVER_FOLDER,
-} from "../utils/constants";
+import { GLOB, ROUTES_PATH, SERVER_FOLDER } from "../utils/constants";
 import { generateTypes } from "../generator/types";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import {
   cleanViewExport,
   containsServerExport,
@@ -18,6 +13,7 @@ import {
 import { build } from "bun";
 import generate from "@babel/generator";
 import traverse from "@babel/traverse";
+import { serverRouteFromFileName } from "../utils/routeFromFileName";
 
 /**
  * Read every routes and create an Elysia instance
@@ -28,6 +24,8 @@ import traverse from "@babel/traverse";
  */
 export const reload = async () => {
   await generateTypes();
+
+  await rm(SERVER_FOLDER, { recursive: true, force: true });
   await mkdir(SERVER_FOLDER, { recursive: true });
 
   const renderables = new Set();
@@ -76,16 +74,6 @@ export const reload = async () => {
       await writeFile(serverPath, code, "utf8");
 
       serverPaths.push(serverPath);
-      // await build({
-
-      //   outdir: join(CACHE_FOLDER, "server"),
-      //   packages: "external",
-      // });
-
-      // const imported =
-      // const plugin = imports.server as Elysia;
-      // const route = "/" + file.replace("index", "").replace(/\.ts[x]/, "");
-      // elysia = elysia.group(route, (app) => app.use(plugin));
     }
   }
 
@@ -98,21 +86,13 @@ export const reload = async () => {
     });
 
     for (const output of outputs) {
-      // hello.js
-      let route = relative(SERVER_FOLDER, output.path);
-
-      // hello
-      route = route.replace(/\.js$/, "");
-
-      // trailing index
-      route = route.replace(/index$/, "");
-
-      route = "/" + route;
-
       const { server: plugin } = await import(output.path);
-      elysia = elysia.group(route, (app) => app.use(plugin));
+      elysia = elysia.group(
+        serverRouteFromFileName(relative(SERVER_FOLDER, output.path)),
+        (app) => app.use(plugin)
+      );
     }
   }
 
-  return { elysia, renderables };
+  return { elysia, renderables, serverPaths };
 };
