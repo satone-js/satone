@@ -20,7 +20,6 @@
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false,
     "types": [
-      "vite-plugin-pages/client-solid",
       ".satone"
     ]
   }

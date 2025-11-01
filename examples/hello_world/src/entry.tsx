@@ -1,13 +1,13 @@
 /* @refresh reload */
+import { FileRoutes } from "satone/client";
 import { Router } from "@solidjs/router";
 import { render } from "solid-js/web";
 import { Suspense } from "solid-js";
-import routes from "~solid-pages";
 
 render(() => {
   return (
     <Router root={(props) => <Suspense>{props.children}</Suspense>}>
-      {routes}
+      <FileRoutes />
     </Router>
   );
 }, document.getElementById("root") as HTMLElement);
