@@ -11,9 +11,13 @@
     },
     "./client": {
       "default": "./src/client/index.ts"
+    },
+    "./server/plugins/prod": {
+      "default": "./src/server/plugins/prod.ts"
     }
   },
   "devDependencies": {
+    "@types/babel__generator": "^7.27.0",
     "@types/bun": "^1.2.20",
     "typescript": "^5.9.2"
   },

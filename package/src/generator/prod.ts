@@ -3,26 +3,8 @@ import { BUILD_FOLDER, SERVER_FOLDER } from "../utils/constants";
 import { serverRouteFromFileName } from "../utils/routeFromFileName";
 
 export const generateProdServerFile = (paths: string[]): string => {
-  let output = `
-    import { staticPlugin } from "@elysiajs/static";
-    import Elysia from "elysia";
-    import path from "node:path";
-
-    const FRONTEND_DIRECTORY = path.join(__dirname, "client");
-    const FRONTEND_ENTRYPOINT = path.join(FRONTEND_DIRECTORY, "index.html");
-
-    const prod = new Elysia({ name: "@satone/production" })
-      .use(
-        staticPlugin({
-          assets: FRONTEND_DIRECTORY,
-          prefix: "/",
-        })
-      )
-      .onError(({ code }) => {
-        if (code === "NOT_FOUND")
-          return Bun.file(FRONTEND_ENTRYPOINT);
-      });
-  `;
+  let output = `import Elysia from "elysia"\n`;
+  output += `import { prod } from "satone/server/plugins/prod";\n\n`;
 
   for (let curr = 0; curr < paths.length; curr++) {
     output += `import { server as plug${curr} } from ${JSON.stringify(
