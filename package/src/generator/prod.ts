@@ -12,14 +12,14 @@ export const generateProdServerFile = (paths: string[]): string => {
     )};\n`;
   }
 
-  output += `\nnew Elysia().use(prod)`;
+  output += `\nexport default new Elysia().use(prod(import.meta.dir))`;
   for (let curr = 0; curr < paths.length; curr++) {
     output += `\n  .group(${JSON.stringify(
       serverRouteFromFileName(relative(SERVER_FOLDER, paths[curr]!))
     )}, (app) => app.use(plug${curr}))`;
   }
 
-  output += `\n  .listen(3000, () => console.log("Running on port http://localhost:3000"));`;
+  output += `;`;
 
   return output;
 };
