@@ -143,6 +143,7 @@ export const elysia = (): Plugin => {
         packages: "bundle",
         splitting: true,
         target: "bun",
+        minify: true,
         outdir: join(BUILD_FOLDER, "server"),
       });
 
