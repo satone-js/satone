@@ -83,14 +83,12 @@ project.
 - `.satone/server` is the Elysia server bundle
 - `.satone/client` is the SolidJS bundle, deployed through the server with a static plugin
 
-For now, we don't have a `satone start` command for running production build
-so you can do it manually by running `bun run .satone/server/index.js`.
-
-By default, the server will run on port `3000`.
+If you want to preview the output locally, you can run `bun run .satone/server/index.js`
+and Bun will start the production server on port `3000`.
 
 ## Contributing
 
-```
+```sh
 git clone https://github.com/satone-js/satone && cd satone
 bun install
 ```
