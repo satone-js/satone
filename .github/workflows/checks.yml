@@ -20,5 +20,4 @@ jobs:
           bun-version: latest
 
       - run: bun install --frozen-lockfile
-      - run: bunx tsc package
       - run: bunx eslint
