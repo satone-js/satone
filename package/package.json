@@ -1,7 +1,7 @@
 {
   "name": "satone",
   "type": "module",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "A fullstack framework that brings Solid and Elysia together.",
   "author": "Mikkel ALMONTE--RINGAUD <contact@vexcited.com> (https://github.com/Vexcited)",
   "license": "MIT",
@@ -13,7 +13,14 @@
   "bugs": {
     "url": "https://github.com/satone-js/satone/issues"
   },
-  "keywords": ["spa", "elysia", "solidjs", "vite", "api", "framework"],
+  "keywords": [
+    "spa",
+    "elysia",
+    "solidjs",
+    "vite",
+    "api",
+    "framework"
+  ],
   "sideEffects": false,
   "exports": {
     "./server": {
@@ -29,7 +36,10 @@
   "bin": {
     "satone": "./src/cli.ts"
   },
-  "files": ["package.json", "src"],
+  "files": [
+    "package.json",
+    "src"
+  ],
   "dependencies": {
     "@babel/generator": "^7.28.5",
     "@babel/parser": "^7.28.5",
