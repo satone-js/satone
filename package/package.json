@@ -2,6 +2,16 @@
   "name": "satone",
   "type": "module",
   "version": "0.0.0",
+  "description": "A fullstack framework that brings Solid and Elysia together.",
+  "keywords": ["spa", "elysia", "solidjs", "vite", "api", "framework"],
+  "author": "Mikkel ALMONTE--RINGAUD <contact@vexcited.com> (https://github.com/Vexcited)",
+  "files": ["src", "package.json"],
+  "sideEffects": false,
+  "repository": {
+    "type": "git",
+    "directory": "package",
+    "url": "git+https://github.com/satone-js/satone.git"
+  },
   "bin": {
     "satone": "./src/cli.ts"
   },
