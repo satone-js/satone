@@ -1,12 +1,12 @@
-import generate from "@babel/generator";
-import traverse, { NodePath } from "@babel/traverse";
+import type { NodePath } from "@babel/traverse";
 import { parse, type ParseResult } from "@babel/parser";
+import traverse from "@babel/traverse";
 import * as t from "@babel/types";
 
-export const getAST = (code: string) =>
+export const getAST = (code: string): ParseResult<t.File> =>
   parse(code, {
-    sourceType: "module",
     plugins: ["typescript", "jsx"],
+    sourceType: "module"
   });
 
 export const containsServerExport = (ast: ParseResult<t.File>): boolean => {
@@ -22,7 +22,7 @@ export const containsServerExport = (ast: ParseResult<t.File>): boolean => {
           (d) => t.isIdentifier(d.id) && d.id.name.toLowerCase() === "server"
         );
       }
-    },
+    }
   });
 
   return contains;
@@ -35,11 +35,8 @@ export const containsViewExport = (ast: ParseResult<t.File>): boolean => {
     ExportDefaultDeclaration(path) {
       if (contains) return; // already found! let's skip.
       const decl = path.node.declaration;
-
-      if (t.isFunctionDeclaration(decl)) {
-        contains = true;
-      }
-    },
+      contains = t.isFunctionDeclaration(decl) || t.isIdentifier(decl);
+    }
   });
 
   return contains;
@@ -49,6 +46,8 @@ export const containsViewExport = (ast: ParseResult<t.File>): boolean => {
  * Mutates the `ast` parameter given, make sure to only run this at the end.
  */
 export const cleanViewExport = (ast: ParseResult<t.File>): void => {
+  const identifiersToRemove = new Set<string>();
+
   traverse(ast, {
     ExportDefaultDeclaration(path) {
       const decl = path.node.declaration;
@@ -56,8 +55,26 @@ export const cleanViewExport = (ast: ParseResult<t.File>): void => {
       if (t.isFunctionDeclaration(decl)) {
         path.remove();
       }
-    },
+      else if (t.isIdentifier(decl)) {
+        identifiersToRemove.add(decl.name);
+        path.remove();
+      }
+    }
   });
+
+  if (identifiersToRemove.size > 0) {
+    traverse(ast, {
+      VariableDeclaration(path) {
+        path.node.declarations = path.node.declarations.filter(
+          (d) => !(t.isIdentifier(d.id) && identifiersToRemove.has(d.id.name))
+        );
+
+        if (path.node.declarations.length === 0) {
+          path.remove();
+        }
+      }
+    });
+  }
 };
 
 export const cleanServerExport = (ast: ParseResult<t.File>): void => {
@@ -77,7 +94,7 @@ export const cleanServerExport = (ast: ParseResult<t.File>): void => {
           path.remove();
         }
       }
-    },
+    }
   });
 };
 
@@ -86,7 +103,6 @@ export function pruneUnusedImports(ast: ParseResult<t.File>): void {
   const usedIdentifiers = new Set();
   const importDeclarations: Array<NodePath<t.ImportDeclaration>> = [];
 
-  // First pass: collect all imported identifiers and import declarations
   traverse(ast, {
     ImportDeclaration(path) {
       importDeclarations.push(path);
@@ -94,37 +110,35 @@ export function pruneUnusedImports(ast: ParseResult<t.File>): void {
       path.node.specifiers.forEach((specifier) => {
         if (specifier.type === "ImportDefaultSpecifier") {
           importedIdentifiers.add(specifier.local.name);
-        } else if (specifier.type === "ImportSpecifier") {
+        }
+        else if (specifier.type === "ImportSpecifier") {
           importedIdentifiers.add(specifier.local.name);
-        } else if (specifier.type === "ImportNamespaceSpecifier") {
+        }
+        else if (specifier.type === "ImportNamespaceSpecifier") {
           importedIdentifiers.add(specifier.local.name);
         }
       });
-    },
+    }
   });
 
-  // Second pass: find which imported identifiers are actually used
   traverse(ast, {
     Identifier(path) {
-      // Skip if this identifier is part of an import declaration
       if (
-        path.isImportDefaultSpecifier() ||
-        path.isImportSpecifier() ||
-        path.isImportNamespaceSpecifier()
+        path.isImportDefaultSpecifier()
+        || path.isImportSpecifier()
+        || path.isImportNamespaceSpecifier()
       ) {
         return;
       }
 
-      // Skip if this is the identifier being declared in an import
       if (
-        path.parent.type === "ImportDefaultSpecifier" ||
-        path.parent.type === "ImportSpecifier" ||
-        path.parent.type === "ImportNamespaceSpecifier"
+        path.parent.type === "ImportDefaultSpecifier"
+        || path.parent.type === "ImportSpecifier"
+        || path.parent.type === "ImportNamespaceSpecifier"
       ) {
         return;
       }
 
-      // Skip if this is part of an import declaration
       if (path.findParent((p) => p.isImportDeclaration())) {
         return;
       }
@@ -141,7 +155,7 @@ export function pruneUnusedImports(ast: ParseResult<t.File>): void {
       if (importedIdentifiers.has(name)) {
         usedIdentifiers.add(name);
       }
-    },
+    }
   });
 
   // ... and remove unused ones.
@@ -165,7 +179,8 @@ export function pruneUnusedImports(ast: ParseResult<t.File>): void {
       const localName = specifier.local.name;
       if (usedIdentifiers.has(localName)) {
         usedSpecifiers.push(specifier);
-      } else {
+      }
+      else {
         unusedSpecifiers.push(specifier);
       }
     });
@@ -173,7 +188,8 @@ export function pruneUnusedImports(ast: ParseResult<t.File>): void {
     if (unusedSpecifiers.length === path.node.specifiers.length) {
       // all imports from this declaration are unused, remove the entire declaration.
       path.remove();
-    } else if (unusedSpecifiers.length > 0) {
+    }
+    else if (unusedSpecifiers.length > 0) {
       // some imports are unused, keep only the used ones.
       path.node.specifiers = usedSpecifiers;
     }

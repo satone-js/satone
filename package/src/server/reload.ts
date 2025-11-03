@@ -1,18 +1,19 @@
-import { Elysia } from "elysia";
-import { dirname, join, relative, resolve, sep } from "node:path";
-import swagger from "@elysiajs/swagger";
-import { GLOB, ROUTES_PATH, SERVER_FOLDER } from "../utils/constants";
-import { generateTypes } from "../generator/types";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { dirname, join, relative, resolve, sep } from "node:path";
+import generate from "@babel/generator";
+import traverse from "@babel/traverse";
+import swagger from "@elysiajs/swagger";
+import { build } from "bun";
+import { Elysia } from "elysia";
+import { generateTypes } from "../generator/types";
 import {
   cleanViewExport,
   containsServerExport,
   containsViewExport,
   getAST,
+  pruneUnusedImports
 } from "../utils/ast";
-import { build } from "bun";
-import generate from "@babel/generator";
-import traverse from "@babel/traverse";
+import { GLOB, ROUTES_PATH, SERVER_FOLDER } from "../utils/constants";
 import { serverRouteFromFileName } from "../utils/routeFromFileName";
 
 /**
@@ -22,10 +23,11 @@ import { serverRouteFromFileName } from "../utils/routeFromFileName";
  * Also looks up if these routes should be handled by
  * SolidJS or not.
  */
+// eslint-disable-next-line ts/explicit-function-return-type
 export const reload = async () => {
   await generateTypes();
 
-  await rm(SERVER_FOLDER, { recursive: true, force: true });
+  await rm(SERVER_FOLDER, { force: true, recursive: true });
   await mkdir(SERVER_FOLDER, { recursive: true });
 
   const renderables = new Set();
@@ -48,10 +50,11 @@ export const reload = async () => {
 
     if (containsServerExport(ast)) {
       if (hasView) cleanViewExport(ast);
+      pruneUnusedImports(ast);
 
       traverse(ast, {
         ImportDeclaration(p) {
-          let source = p.node.source.value;
+          const source = p.node.source.value;
 
           if (source.startsWith(".") || source.startsWith("..")) {
             // read absolute path.
@@ -66,7 +69,7 @@ export const reload = async () => {
             // update the value.
             p.node.source.value = newPath;
           }
-        },
+        }
       });
 
       const { code } = generate(ast);
@@ -80,9 +83,9 @@ export const reload = async () => {
   if (serverPaths.length > 0) {
     const { outputs } = await build({
       entrypoints: serverPaths,
-      outdir: SERVER_FOLDER,
-      packages: "external",
       external: ["*"],
+      outdir: SERVER_FOLDER,
+      packages: "external"
     });
 
     for (const output of outputs) {
