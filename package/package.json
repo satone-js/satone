@@ -34,7 +34,7 @@
     }
   },
   "bin": {
-    "satone": "./src/cli.ts"
+    "satone": "src/cli.ts"
   },
   "files": [
     "package.json",
