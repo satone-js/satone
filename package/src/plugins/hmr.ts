@@ -1,11 +1,10 @@
 import type { Plugin } from "vite";
-import { setsAreEqual } from "../utils/sets";
-import { setServerState, state } from "../server/state";
 import { reload } from "../server/reload";
+import { setServerState, state } from "../server/state";
+import { setsAreEqual } from "../utils/sets";
 
 export const hmr = (): Plugin => {
   return {
-    name: "@satone/hmr",
     async handleHotUpdate(ctx) {
       // Keep trace of the previous rendered routes.
       const previousRenderables = state.renderables;
@@ -20,9 +19,11 @@ export const hmr = (): Plugin => {
 
         ctx.server.hot.send({ type: "full-reload" });
         ctx.server.moduleGraph.invalidateAll();
-      } else {
+      }
+      else {
         console.log(new Date(), "[hmr]: updated");
       }
     },
+    name: "@satone/hmr"
   };
 };

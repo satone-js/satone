@@ -1,9 +1,9 @@
-import pages from "vite-plugin-pages";
 import type { Plugin } from "vite";
-import { ROUTES_PATH } from "../utils/constants";
-import { setServerState, state } from "../server/state";
-import { reload } from "../server/reload";
 import { watch } from "node:fs";
+import pages from "vite-plugin-pages";
+import { reload } from "../server/reload";
+import { setServerState, state } from "../server/state";
+import { ROUTES_PATH } from "../utils/constants";
 
 export const router = (): Plugin[] => {
   return [
@@ -11,13 +11,11 @@ export const router = (): Plugin[] => {
       dirs: [ROUTES_PATH],
       async onRoutesGenerated(routes) {
         return routes.filter(({ path }) => state.renderables.has(path));
-      },
+      }
     }),
     {
-      enforce: "pre",
-      name: "@satone/router",
       async configureServer() {
-        const process = async () => setServerState(await reload());
+        const process = async (): Promise<void> => setServerState(await reload());
 
         // NOTE: we manually watch (not with chokidar) because for some
         //       reason Vite does not catch all updates...
@@ -31,6 +29,8 @@ export const router = (): Plugin[] => {
 
         await process();
       },
-    },
+      enforce: "pre",
+      name: "@satone/router"
+    }
   ];
 };

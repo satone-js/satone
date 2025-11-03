@@ -1,35 +1,35 @@
+import { cp, mkdir, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { BUILD_FOLDER } from "../../utils/constants";
-import { cp, mkdir, rm } from "node:fs/promises";
 
 const FALLBACK_ROUTE = "__server";
 const VERCEL_OUTPUT = join(process.cwd(), ".vercel", "output");
 const FUNCTION = join(VERCEL_OUTPUT, "functions", FALLBACK_ROUTE + ".func");
 
-export const generateVercelBuildOutput = async () => {
+export const generateVercelBuildOutput = async (): Promise<void> => {
   await rm(VERCEL_OUTPUT, { force: true, recursive: true });
 
   await Bun.write(
     join(VERCEL_OUTPUT, "config.json"),
     JSON.stringify({
-      version: 3,
       routes: [
         {
-          src: "/(.*)",
           dest: "/__server",
-        },
+          src: "/(.*)"
+        }
       ],
+      version: 3
     })
   );
 
   await Bun.write(
     join(FUNCTION, ".vc-config.json"),
     JSON.stringify({
-      runtime: "bun1.x",
       handler: "index.mjs",
       launcherType: "Nodejs",
+      runtime: "bun1.x",
       shouldAddHelpers: false,
-      supportsResponseStreaming: true,
+      supportsResponseStreaming: true
     })
   );
 
@@ -42,10 +42,10 @@ export default server;
   );
 
   await cp(join(BUILD_FOLDER, "client"), join(FUNCTION, "client"), {
-    recursive: true,
+    recursive: true
   });
 
   await cp(join(BUILD_FOLDER, "server"), join(FUNCTION, "server"), {
-    recursive: true,
+    recursive: true
   });
 };

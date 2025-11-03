@@ -1,1 +1,1 @@
-export const something = (name: string) => "hello, " + name;
+export const something = (name: string): string => "hello, " + name;

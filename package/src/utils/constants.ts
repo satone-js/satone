@@ -1,5 +1,5 @@
-import { Glob } from "bun";
 import { join } from "node:path";
+import { Glob } from "bun";
 
 export const GLOB = new Glob("**/*.ts[x]");
 export const ROUTES_PATH = join(process.cwd(), "src/routes");

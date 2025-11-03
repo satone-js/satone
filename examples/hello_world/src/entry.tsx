@@ -1,8 +1,8 @@
 /* @refresh reload */
-import { FileRoutes } from "satone/client";
 import { Router } from "@solidjs/router";
-import { render } from "solid-js/web";
+import { FileRoutes } from "satone/client";
 import { Suspense } from "solid-js";
+import { render } from "solid-js/web";
 
 render(() => {
   return (

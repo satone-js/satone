@@ -2,7 +2,7 @@
 
 import { generateVercelBuildOutput } from "./generator/presets/vercel";
 
-//! This file is the entrypoint for the `satone` CLI, defined in `package.json`.
+// ! This file is the entrypoint for the `satone` CLI, defined in `package.json`.
 
 const [, , command] = Bun.argv;
 
@@ -14,11 +14,6 @@ if (!command) {
 }
 
 switch (command) {
-  case "dev": {
-    const { createDevServer } = await import("./server/dev");
-    await createDevServer();
-    break;
-  }
   case "build": {
     const { createBuild } = await import("./server/build");
     await createBuild();
@@ -27,6 +22,11 @@ switch (command) {
     // TODO: move this into a configuration
     await generateVercelBuildOutput();
 
+    break;
+  }
+  case "dev": {
+    const { createDevServer } = await import("./server/dev");
+    await createDevServer();
     break;
   }
 }

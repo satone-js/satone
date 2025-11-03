@@ -1,31 +1,29 @@
-import { Readable } from "node:stream";
 import type { Plugin } from "vite";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 
+import { join, relative } from "node:path";
+import { Readable } from "node:stream";
 import generate from "@babel/generator";
 import { parse } from "@babel/parser";
+import { Glob } from "bun";
+import { generateProdServerFile } from "../generator/prod";
 import { state } from "../server/state";
-import {
-  BUILD_FOLDER,
-  GLOB,
-  ROUTES_PATH,
-  SERVER_FOLDER,
-} from "../utils/constants";
 import {
   cleanServerExport,
   cleanViewExport,
   containsViewExport,
   getAST,
-  pruneUnusedImports,
+  pruneUnusedImports
 } from "../utils/ast";
-import { join, relative } from "node:path";
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
-import { Glob } from "bun";
-import { generateProdServerFile } from "../generator/prod";
+import {
+  BUILD_FOLDER,
+  GLOB,
+  ROUTES_PATH,
+  SERVER_FOLDER
+} from "../utils/constants";
 
 export const elysia = (): Plugin => {
   return {
-    enforce: "pre",
-    name: "@satone/elysia",
     configureServer(server) {
       server.middlewares.use(async (hreq, hres, next) => {
         if (
@@ -49,7 +47,7 @@ export const elysia = (): Plugin => {
             headers.append(key, value);
           }
 
-          let body: ReadableStream | null = null;
+          let body: null | ReadableStream = null;
           if (hreq.method !== "GET" && hreq.method !== "HEAD") {
             body = new ReadableStream({
               start(controller) {
@@ -62,14 +60,14 @@ export const elysia = (): Plugin => {
                 hreq.on("error", (err) => {
                   controller.error(err);
                 });
-              },
+              }
             });
           }
 
           const req = new Request(url.href, {
-            method: hreq.method,
-            headers,
             body,
+            headers,
+            method: hreq.method
           });
 
           // Use our Elysia instance to handle the API request.
@@ -84,38 +82,16 @@ export const elysia = (): Plugin => {
 
           if (res.body) {
             Readable.fromWeb(res.body!).pipe(hres);
-          } else hres.end();
-        } catch (error) {
+          }
+          else hres.end();
+        }
+        catch (error) {
           console.error("next():", error);
           next();
         }
       });
     },
-
-    /**
-     * - Removes unused imports
-     * - Prunes the `export const server` variable which contains API
-     *   source code and should not be distributed to front-end.
-     */
-    transform(code, id) {
-      // Make sure we're only transforming files inside routes.
-      if (!id.startsWith(ROUTES_PATH)) return;
-
-      const ast = parse(code, {
-        sourceType: "module",
-        plugins: ["typescript", "jsx"],
-      });
-
-      cleanServerExport(ast);
-      pruneUnusedImports(ast);
-
-      const output = generate(ast, { retainLines: false }, code);
-
-      return {
-        code: output.code,
-      };
-    },
-
+    enforce: "pre",
     async generateBundle(client) {
       const now = Date.now();
       console.log("\n");
@@ -140,11 +116,11 @@ export const elysia = (): Plugin => {
 
       const bundles = await Bun.build({
         entrypoints: [entrypoint],
-        packages: "bundle",
-        splitting: true,
-        target: "bun",
         minify: true,
         outdir: join(BUILD_FOLDER, "server"),
+        packages: "bundle",
+        splitting: true,
+        target: "bun"
       });
 
       await rm(entrypoint);
@@ -161,5 +137,31 @@ export const elysia = (): Plugin => {
       // Let's now manipulate the destination of the Vite output!
       client.dir = join(BUILD_FOLDER, "client");
     },
+
+    name: "@satone/elysia",
+
+    /**
+     * - Removes unused imports
+     * - Prunes the `export const server` variable which contains API
+     *   source code and should not be distributed to front-end.
+     */
+    transform(code, id) {
+      // Make sure we're only transforming files inside routes.
+      if (!id.startsWith(ROUTES_PATH)) return;
+
+      const ast = parse(code, {
+        plugins: ["typescript", "jsx"],
+        sourceType: "module"
+      });
+
+      cleanServerExport(ast);
+      pruneUnusedImports(ast);
+
+      const output = generate(ast, { retainLines: false }, code);
+
+      return {
+        code: output.code
+      };
+    }
   };
 };
