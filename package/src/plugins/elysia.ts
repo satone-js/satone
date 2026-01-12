@@ -5,7 +5,6 @@ import { join, relative } from "node:path";
 import { Readable } from "node:stream";
 import generate from "@babel/generator";
 import { parse } from "@babel/parser";
-import { Glob } from "bun";
 import { generateProdServerFile } from "../generator/prod";
 import { state } from "../server/state";
 import {
@@ -103,19 +102,8 @@ export const elysia = (): Plugin => {
       await rm(BUILD_FOLDER, { force: true, recursive: true });
       await mkdir(BUILD_FOLDER);
 
-      // We want to take the pre-generated JS bundles from `node_modules/.satone/server`
-      // because they're already made without extra imports.
-      const GLOB = new Glob("**/*.js");
-
-      // Find all routes.
-      const paths: string[] = [];
-      for await (const file of GLOB.scan(SERVER_FOLDER)) {
-        const path = join(SERVER_FOLDER, file);
-        paths.push(path);
-      }
-
       const entrypoint = join(BUILD_FOLDER, "index.ts");
-      await writeFile(entrypoint, generateProdServerFile(paths), "utf8");
+      await Bun.write(entrypoint, generateProdServerFile());
 
       const bundles = await Bun.build({
         entrypoints: [entrypoint],

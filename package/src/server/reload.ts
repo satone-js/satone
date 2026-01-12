@@ -1,4 +1,4 @@
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm } from "node:fs/promises";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import generate from "@babel/generator";
 import traverse from "@babel/traverse";
@@ -16,7 +16,7 @@ import {
 } from "../utils/ast";
 import { GLOB, ROUTES_PATH, SERVER_FOLDER } from "../utils/constants";
 
-export type Executable = [path: string, pattern: URLPattern];
+export type Executable = [path: string, pattern: URLPattern, bundle: string];
 
 /**
  * Read every routes and create an Elysia instance
@@ -97,7 +97,7 @@ export const reload = async (): Promise<{
 
       const route = mapRouteNameByPath(file);
       const { server: plugin } = await import(output.path);
-      executables.push([route, new URLPattern({ pathname: route })]);
+      executables.push([route, new URLPattern({ pathname: route }), output.path]);
 
       elysia = elysia.group(
         route,

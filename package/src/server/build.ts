@@ -8,8 +8,7 @@ import { PROJECT_PATH } from "../utils/constants";
 import { reload } from "./reload";
 import { setServerState } from "./state";
 
-// eslint-disable-next-line ts/explicit-function-return-type
-export const createBuild = async () => {
+export const createBuild = async (): Promise<void> => {
   // Let's create a dummy Elysia server and grab the routes state.
   setServerState(await reload());
 

@@ -1,25 +1,25 @@
-import { relative } from "node:path";
-import { BUILD_FOLDER, SERVER_FOLDER } from "../utils/constants";
-import { mapRouteNameByPath } from "./route";
+import { state } from "../server/state";
 
-export const generateProdServerFile = (paths: string[]): string => {
+export const generateProdServerFile = (): string => {
   let output = `import Elysia from "elysia"\n`;
   output += `import { prod } from "satone/server/plugins/prod";\n\n`;
 
-  for (let curr = 0; curr < paths.length; curr++) {
+  for (let curr = 0; curr < state.executables.length; curr++) {
+    const [,, bundle] = state.executables[curr]!;
+
     output += `import { server as plug${curr} } from ${JSON.stringify(
-      relative(BUILD_FOLDER, paths[curr]!)
+      bundle
     )};\n`;
   }
 
   output += `\nexport default new Elysia().use(prod(import.meta.dir))`;
-  for (let curr = 0; curr < paths.length; curr++) {
+  for (let curr = 0; curr < state.executables.length; curr++) {
+    const [path] = state.executables[curr]!;
+
     output += `\n  .group(${JSON.stringify(
-      mapRouteNameByPath(relative(SERVER_FOLDER, paths[curr]!))
+      path
     )}, (app) => app.use(plug${curr}))`;
   }
-
-  output += `;`;
 
   return output;
 };
