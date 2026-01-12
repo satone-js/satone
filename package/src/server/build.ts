@@ -1,5 +1,6 @@
 import { build } from "vite";
 import solid from "vite-plugin-solid";
+import tsconfig from "vite-tsconfig-paths";
 import { elysia } from "../plugins/elysia";
 import { router } from "../plugins/router";
 import { reload } from "./reload";
@@ -11,6 +12,6 @@ export const createBuild = async () => {
   setServerState(await reload());
 
   await build({
-    plugins: [elysia(), router(), solid({ ssr: false })]
+    plugins: [tsconfig({ root: process.cwd() }), elysia(), router(), solid({ ssr: false })]
   });
 };
