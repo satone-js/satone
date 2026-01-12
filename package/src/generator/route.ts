@@ -17,12 +17,16 @@ export const normalizeName = (name: string, isDynamic: boolean): string => {
   return name.replace(replaceDynamicRouteRE, "$1");
 };
 
+export const removeFileExtension = (path: string): string => {
+  return path.replace(/\.(?:[jt]sx?)$/, "");
+};
+
 export const mapRouteNameByPath = (path: string): string => {
   if (path[0] === "/") {
     path = path.substring(1);
   }
 
-  path = path.replace(/\.(?:[jt]sx?)$/, "");
+  path = removeFileExtension(path);
 
   const nodes: Array<string> = [];
   for (const node of path.split(sep)) {

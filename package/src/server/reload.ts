@@ -5,7 +5,7 @@ import traverse from "@babel/traverse";
 import swagger from "@elysiajs/swagger";
 import { build } from "bun";
 import { type AnyElysia, Elysia } from "elysia";
-import { mapRouteNameByPath } from "../generator/route";
+import { mapRouteNameByPath, removeFileExtension } from "../generator/route";
 import { generateTypes } from "../generator/types";
 import {
   cleanViewExport,
@@ -36,7 +36,7 @@ export const reload = async (): Promise<{
   await mkdir(SERVER_FOLDER, { recursive: true });
 
   const renderables = new Set<string>();
-  const serverPaths: string[] = [];
+  const server: Array<string> = [];
 
   let elysia = new Elysia().use(swagger());
 
@@ -77,29 +77,30 @@ export const reload = async (): Promise<{
       });
 
       const { code } = generate(ast);
-      const serverPath = join(SERVER_FOLDER, file);
-      await Bun.write(serverPath, code);
-
-      serverPaths.push(serverPath);
+      await Bun.write(join(SERVER_FOLDER, file), code);
+      server.push(file);
     }
   }
 
   const executables = new Array<Executable>();
-  if (serverPaths.length > 0) {
+  if (server.length > 0) {
     const { outputs } = await build({
-      entrypoints: serverPaths,
+      entrypoints: server.map((file) => join(SERVER_FOLDER, file)),
       external: ["*"],
       outdir: SERVER_FOLDER,
       packages: "external"
     });
 
-    for (const output of outputs) {
+    for (let index = 0; index < outputs.length; index++) {
+      const output = outputs[index]!;
+      const file = removeFileExtension(server[index]!);
+
+      const route = mapRouteNameByPath(file);
       const { server: plugin } = await import(output.path);
-      const path = mapRouteNameByPath(relative(SERVER_FOLDER, output.path));
-      executables.push([path, new URLPattern({ pathname: path })]);
+      executables.push([route, new URLPattern({ pathname: route })]);
 
       elysia = elysia.group(
-        path,
+        route,
         (app) => app.use(plugin)
       );
     }
