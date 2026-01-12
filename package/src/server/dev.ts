@@ -10,6 +10,7 @@ export const createDevServer = async (): Promise<ViteDevServer> => {
   const vite = await createServer({
     clearScreen: false,
     logLevel: "silent",
+    optimizeDeps: { exclude: ["satone"] },
     plugins: [hmr(), elysia(), router(), solid()]
   });
 
