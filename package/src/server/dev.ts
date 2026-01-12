@@ -13,6 +13,7 @@ export const createDevServer = async (): Promise<ViteDevServer> => {
 
   const vite = await createServer({
     clearScreen: false,
+    define: config?.define,
     logLevel: "silent",
     optimizeDeps: { exclude: ["satone"] },
     plugins: [

@@ -34,6 +34,7 @@ switch (command) {
       if (path !== CONFIG_PATH) return;
 
       console.log(new Date(), "[vite]: restarting due to changes in the config file...");
+      vite.httpServer?.close();
       vite.close();
 
       Loader.registry.clear();

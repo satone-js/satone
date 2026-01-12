@@ -16,6 +16,7 @@ export const createBuild = async () => {
   const config = await loadConfig();
 
   await build({
+    define: config?.define,
     plugins: [
       ...(config?.plugins ?? []),
       tsconfig({ root: PROJECT_PATH }), elysia(), router(), solid()

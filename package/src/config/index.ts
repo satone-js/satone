@@ -1,7 +1,8 @@
-import type { PluginOption } from "vite";
+import type { InlineConfig as Vite } from "vite";
 
 export interface SatoneConfig {
-  plugins?: Array<PluginOption>;
+  define?: Vite["define"];
+  plugins?: Vite["plugins"];
 }
 
 export const defineConfig = (config: SatoneConfig): SatoneConfig => config;
