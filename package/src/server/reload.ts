@@ -5,6 +5,7 @@ import traverse from "@babel/traverse";
 import swagger from "@elysiajs/swagger";
 import { build } from "bun";
 import { Elysia } from "elysia";
+import { mapRouteNameByPath } from "../generator/route";
 import { generateTypes } from "../generator/types";
 import {
   cleanViewExport,
@@ -44,8 +45,7 @@ export const reload = async () => {
     const hasView = containsViewExport(ast);
 
     if (hasView) {
-      const route = file.replace("index", "/").replace(/\.ts[x]/, "");
-      renderables.add(route);
+      renderables.add(mapRouteNameByPath(file));
     }
 
     if (containsServerExport(ast)) {

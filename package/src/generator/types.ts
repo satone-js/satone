@@ -2,6 +2,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { containsServerExport, getAST } from "../utils/ast";
 import { CACHE_FOLDER, GLOB, ROUTES_PATH } from "../utils/constants";
+import { mapRouteNameByPath } from "./route";
 
 const BANNER
   = `
@@ -33,7 +34,7 @@ const generateEdenTypes = async (): Promise<void> => {
     const ast = getAST(code);
     if (!containsServerExport(ast)) continue;
 
-    const route = "/" + file.replace("index", "").replace(/\.ts[x]/, "");
+    const route = mapRouteNameByPath(file);
 
     output += `import { server as plug${routes.length} } from ${JSON.stringify(
       join("..", "..", "src", "routes", file)
