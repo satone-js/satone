@@ -1,7 +1,7 @@
 {
   "name": "satone",
   "type": "module",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "A fullstack framework that brings Solid and Elysia together.",
   "author": "Mikkel ALMONTE--RINGAUD <contact@vexcited.com> (https://github.com/Vexcited)",
   "license": "MIT",
