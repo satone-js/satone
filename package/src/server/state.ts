@@ -7,4 +7,5 @@ export const state = {
 export const setServerState = (value: typeof state): void => {
   state.elysia = value.elysia;
   state.renderables = value.renderables;
+  state.executables = value.executables;
 };

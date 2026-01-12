@@ -18,7 +18,11 @@ export const normalizeName = (name: string, isDynamic: boolean): string => {
 };
 
 export const mapRouteNameByPath = (path: string): string => {
-  path = path.replace(/\.ts[x]/, "");
+  if (path[0] === "/") {
+    path = path.substring(1);
+  }
+
+  path = path.replace(/\.(?:[jt]sx?)$/, "");
 
   const nodes: Array<string> = [];
   for (const node of path.split(sep)) {
@@ -33,9 +37,7 @@ export const mapRouteNameByPath = (path: string): string => {
         nodes.push(`:${normalizedName}`);
     }
     else {
-      if (normalizedName === "index")
-        nodes.push("");
-      else
+      if (normalizedName !== "index")
         nodes.push(normalizedName);
     }
   }

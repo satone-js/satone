@@ -23,9 +23,19 @@ export const elysia = (): Plugin => {
   return {
     configureServer(server) {
       server.middlewares.use(async (hreq, hres, next) => {
+        const path = hreq.url || "/";
+        const host = hreq.headers.host || "localhost";
+        const url = new URL(`http://${host}${path}`);
+
+        const executable = state.executables.find(
+          ([_, pattern]) => pattern.test(url)
+        );
+
         if (
-          !state.elysia.routes.find(
-            (route) => route.path === hreq.url && route.method === hreq.method
+          !executable
+          || !state.elysia.routes.find((route) =>
+            route.path === executable[0]
+            && route.method === hreq.method
           )
         ) {
           next();
@@ -33,10 +43,6 @@ export const elysia = (): Plugin => {
         }
 
         try {
-          const path = hreq.url || "/";
-          const host = hreq.headers.host || "localhost";
-          const url = new URL(`http://${host}${path}`);
-
           const headers = new Headers();
           for (let i = 0; i < hreq.rawHeaders.length; i += 2) {
             const key = hreq.rawHeaders[i]!;

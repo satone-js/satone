@@ -4,7 +4,7 @@ import generate from "@babel/generator";
 import traverse from "@babel/traverse";
 import swagger from "@elysiajs/swagger";
 import { build } from "bun";
-import { Elysia } from "elysia";
+import { type AnyElysia, Elysia } from "elysia";
 import { mapRouteNameByPath } from "../generator/route";
 import { generateTypes } from "../generator/types";
 import {
@@ -15,7 +15,8 @@ import {
   pruneUnusedImports
 } from "../utils/ast";
 import { GLOB, ROUTES_PATH, SERVER_FOLDER } from "../utils/constants";
-import { serverRouteFromFileName } from "../utils/routeFromFileName";
+
+export type Executable = [path: string, pattern: URLPattern];
 
 /**
  * Read every routes and create an Elysia instance
@@ -24,14 +25,17 @@ import { serverRouteFromFileName } from "../utils/routeFromFileName";
  * Also looks up if these routes should be handled by
  * SolidJS or not.
  */
-// eslint-disable-next-line ts/explicit-function-return-type
-export const reload = async () => {
+export const reload = async (): Promise<{
+  elysia: AnyElysia;
+  executables: Array<Executable>;
+  renderables: Set<string>;
+}> => {
   await generateTypes();
 
   await rm(SERVER_FOLDER, { force: true, recursive: true });
   await mkdir(SERVER_FOLDER, { recursive: true });
 
-  const renderables = new Set();
+  const renderables = new Set<string>();
   const serverPaths: string[] = [];
 
   let elysia = new Elysia().use(swagger());
@@ -74,12 +78,13 @@ export const reload = async () => {
 
       const { code } = generate(ast);
       const serverPath = join(SERVER_FOLDER, file);
-      await writeFile(serverPath, code, "utf8");
+      await Bun.write(serverPath, code);
 
       serverPaths.push(serverPath);
     }
   }
 
+  const executables = new Array<Executable>();
   if (serverPaths.length > 0) {
     const { outputs } = await build({
       entrypoints: serverPaths,
@@ -90,12 +95,15 @@ export const reload = async () => {
 
     for (const output of outputs) {
       const { server: plugin } = await import(output.path);
+      const path = mapRouteNameByPath(relative(SERVER_FOLDER, output.path));
+      executables.push([path, new URLPattern({ pathname: path })]);
+
       elysia = elysia.group(
-        serverRouteFromFileName(relative(SERVER_FOLDER, output.path)),
+        path,
         (app) => app.use(plugin)
       );
     }
   }
 
-  return { elysia, renderables, serverPaths };
+  return { elysia, executables, renderables };
 };

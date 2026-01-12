@@ -1,6 +1,7 @@
 import type { Plugin } from "vite";
 import { watch } from "node:fs";
 import pages from "vite-plugin-pages";
+import { mapRouteNameByPath } from "../generator/route";
 import { reload } from "../server/reload";
 import { setServerState, state } from "../server/state";
 import { ROUTES_PATH } from "../utils/constants";
@@ -10,7 +11,27 @@ export const router = (): Plugin[] => {
     pages({
       dirs: [ROUTES_PATH],
       async onRoutesGenerated(routes) {
-        return routes.filter(({ path }) => state.renderables.has(path));
+        interface Route {
+          children?: Array<Route>;
+          path: string;
+        }
+
+        const recursive = (initial: string, routes: Array<Route>): Array<Route> => {
+          return routes.filter(({ children, path }) => {
+            path = path.replace("/", "");
+            path = [initial, path].join("/");
+
+            if (state.renderables.has(path)) {
+              return true;
+            }
+
+            if (children) return recursive(path, children);
+            else return false;
+          });
+        };
+
+        const total = recursive("", routes);
+        return total;
       }
     }),
     {
