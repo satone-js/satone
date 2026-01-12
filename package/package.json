@@ -29,6 +29,9 @@
     "./client": {
       "default": "./src/client/index.ts"
     },
+    "./config": {
+      "default": "./src/config/index.ts"
+    },
     "./server/plugins/prod": {
       "default": "./src/server/plugins/prod.ts"
     }
