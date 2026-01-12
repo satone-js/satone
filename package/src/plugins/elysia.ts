@@ -1,5 +1,5 @@
 import type { Plugin } from "vite";
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, rm, writeFile } from "node:fs/promises";
 
 import { join, relative } from "node:path";
 import { Readable } from "node:stream";
@@ -10,14 +10,11 @@ import { generateProdServerFile } from "../generator/prod";
 import { state } from "../server/state";
 import {
   cleanServerExport,
-  cleanViewExport,
-  containsViewExport,
-  getAST,
   pruneUnusedImports
 } from "../utils/ast";
 import {
   BUILD_FOLDER,
-  GLOB,
+  PROJECT_PATH,
   ROUTES_PATH,
   SERVER_FOLDER
 } from "../utils/constants";
@@ -127,7 +124,7 @@ export const elysia = (): Plugin => {
 
       for (const bundle of bundles.outputs) {
         console.log(
-          relative(process.cwd(), bundle.path),
+          relative(PROJECT_PATH, bundle.path),
           `(${bundle.size} bytes)`
         );
       }

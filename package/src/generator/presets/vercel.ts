@@ -1,9 +1,9 @@
-import { cp, mkdir, rm } from "node:fs/promises";
+import { cp, rm } from "node:fs/promises";
 import { join } from "node:path";
-import { BUILD_FOLDER } from "../../utils/constants";
+import { BUILD_FOLDER, PROJECT_PATH } from "../../utils/constants";
 
 const FALLBACK_ROUTE = "__server";
-const VERCEL_OUTPUT = join(process.cwd(), ".vercel", "output");
+const VERCEL_OUTPUT = join(PROJECT_PATH, ".vercel", "output");
 const FUNCTION = join(VERCEL_OUTPUT, "functions", FALLBACK_ROUTE + ".func");
 
 export const generateVercelBuildOutput = async (): Promise<void> => {

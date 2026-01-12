@@ -1,9 +1,8 @@
 #!/usr/bin/env bun
-
+import { watch } from "node:fs";
+import { join } from "node:path";
 import { generateVercelBuildOutput } from "./generator/presets/vercel";
-
-// ! This file is the entrypoint for the `satone` CLI, defined in `package.json`.
-
+import { CONFIG_FILE, CONFIG_PATH, PROJECT_PATH } from "./utils/constants";
 const [, , command] = Bun.argv;
 
 if (!command) {
@@ -26,7 +25,29 @@ switch (command) {
   }
   case "dev": {
     const { createDevServer } = await import("./server/dev");
-    await createDevServer();
+
+    let vite = await createDevServer();
+    const watcher = watch(PROJECT_PATH, async (_, filename) => {
+      if (!filename) return;
+
+      const path = join(PROJECT_PATH, filename);
+      if (path !== CONFIG_PATH) return;
+
+      console.log(new Date(), "[vite]: restarting due to changes in the config file...");
+      vite.close();
+
+      Loader.registry.clear();
+      vite = await createDevServer();
+    });
+
+    process.on("SIGINT", () => {
+      console.log(new Date(), "[vite]: closing...");
+      watcher.close();
+      vite.close();
+
+      process.exit(0);
+    });
+
     break;
   }
 }

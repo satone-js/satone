@@ -1,18 +1,24 @@
 import { createServer, type ViteDevServer } from "vite";
 import solid from "vite-plugin-solid";
 import tsconfig from "vite-tsconfig-paths";
+import { loadConfig } from "../config/load";
 import { elysia } from "../plugins/elysia";
 import { hmr } from "../plugins/hmr";
 import { router } from "../plugins/router";
+import { PROJECT_PATH } from "../utils/constants";
 
 export const createDevServer = async (): Promise<ViteDevServer> => {
   console.log(new Date(), "[vite]: http://localhost:3000");
+  const config = await loadConfig();
 
   const vite = await createServer({
     clearScreen: false,
     logLevel: "silent",
     optimizeDeps: { exclude: ["satone"] },
-    plugins: [tsconfig({ root: process.cwd() }), hmr(), elysia(), router(), solid()]
+    plugins: [
+      ...(config?.plugins ?? []),
+      tsconfig({ root: PROJECT_PATH }), hmr(), elysia(), router(), solid()
+    ]
   });
 
   await vite.listen(3000);
