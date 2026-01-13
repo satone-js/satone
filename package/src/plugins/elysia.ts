@@ -6,7 +6,7 @@ import { join, relative } from "node:path";
 import { Readable } from "node:stream";
 import generate from "@babel/generator";
 import { parse } from "@babel/parser";
-import dts from "bun-plugin-dtsx";
+// import dts from "bun-plugin-dtsx";
 import { state } from "../server/state";
 import {
   cleanServerExport,
@@ -115,8 +115,9 @@ export const elysia = (config?: SatoneConfig): Plugin => {
 
       // openapi if swagger is specified
       if (config?.swagger) {
-        server += newline("import { join } from 'node:path'");
-        server += newline("import { openapi, openapiRefFromTypes } from 'satone/server/plugins/exports'");
+        // server += newline("import { join } from 'node:path'");
+        // server += newline("import { openapi, openapiRefFromTypes } from 'satone/server/plugins/exports'");
+        server += newline("import { openapi } from 'satone/server/plugins/exports'");
       }
 
       // routes
@@ -139,8 +140,9 @@ export const elysia = (config?: SatoneConfig): Plugin => {
         server += `.use(openapi({
           path: ${JSON.stringify(config.swagger.path)},
           specPath: ${JSON.stringify("/" + config.swagger.path + "/json")},
-          references: openapiRefFromTypes(join(__dirname, 'server', 'index.d.ts'))
         }))`;
+        // TODO: properly one day...
+        // references: openapiRefFromTypes(join(__dirname, 'server', 'index.d.ts'))
       }
 
       for (let curr = 0; curr < state.executables.length; curr++) {
@@ -160,11 +162,11 @@ export const elysia = (config?: SatoneConfig): Plugin => {
         minify: true,
         outdir: join(BUILD_FOLDER, "server"),
         packages: "bundle",
-        plugins: [dts({
-          // @ts-expect-error : they have their own build configuration
-          outdir: join(BUILD_FOLDER, "server"),
-          root: join(BUILD_FOLDER)
-        })],
+        // plugins: [dts({
+        //   // @ts-expect-error : they have their own build configuration
+        //   outdir: join(BUILD_FOLDER, "server"),
+        //   root: join(BUILD_FOLDER)
+        // })],
         splitting: true,
         target: "bun"
       });
