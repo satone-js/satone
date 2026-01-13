@@ -6,7 +6,7 @@ import { join, relative } from "node:path";
 import { Readable } from "node:stream";
 import generate from "@babel/generator";
 import { parse } from "@babel/parser";
-import { generateProdServerFile } from "../generator/prod";
+import dts from "bun-plugin-dtsx";
 import { state } from "../server/state";
 import {
   cleanServerExport,
@@ -17,6 +17,7 @@ import {
   PROJECT_PATH,
   ROUTES_PATH
 } from "../utils/constants";
+import { newline } from "../utils/newline";
 
 export const elysia = (config?: SatoneConfig): Plugin => {
   const toURL = (req: Connect.IncomingMessage): URL => {
@@ -103,23 +104,75 @@ export const elysia = (config?: SatoneConfig): Plugin => {
       const now = Date.now();
       console.log("\n");
 
-      // cleanup previous builds.
+      // cleanup previous builds. ----------------------------------------------
       await rm(join(BUILD_FOLDER, "server"), { force: true, recursive: true });
 
-      const entrypoint = join(BUILD_FOLDER, "index.ts");
-      await Bun.write(entrypoint, generateProdServerFile());
+      // generate the server entry! --------------------------------------------
+      let server = newline("import Elysia from 'elysia'");
+
+      // production middleware
+      server += newline("import { prod } from 'satone/server/plugins/prod'");
+
+      // openapi if swagger is specified
+      if (config?.swagger) {
+        server += newline("import { join } from 'node:path'");
+        server += newline("import { openapi, openapiRefFromTypes } from 'satone/server/plugins/exports'");
+      }
+
+      // routes
+      for (let curr = 0; curr < state.executables.length; curr++) {
+        const [,, bundle] = state.executables[curr]!;
+
+        server += newline(`import { server as plug${curr} } from ${JSON.stringify(
+          bundle
+        )}`);
+      }
+
+      // initiate elysia
+      server += "export default new Elysia()";
+
+      // add production middleware
+      server += ".use(prod(import.meta.dir))";
+
+      // add openapi if specified
+      if (config?.swagger) {
+        server += `.use(openapi({
+          path: ${JSON.stringify(config.swagger.path)},
+          specPath: ${JSON.stringify("/" + config.swagger.path + "/json")},
+          references: openapiRefFromTypes(join(__dirname, 'server', 'index.d.ts'))
+        }))`;
+      }
+
+      for (let curr = 0; curr < state.executables.length; curr++) {
+        const [path] = state.executables[curr]!;
+
+        server += `.group(${JSON.stringify(
+          path
+        )}, (app) => app.use(plug${curr}))`;
+      }
+
+      // bundle everything -----------------------------------------------------
+      const entry = Bun.file(join(BUILD_FOLDER, "index.ts"));
+      await Bun.write(entry, server);
 
       const bundles = await Bun.build({
-        entrypoints: [entrypoint],
+        entrypoints: [entry.name!],
         minify: true,
         outdir: join(BUILD_FOLDER, "server"),
         packages: "bundle",
+        plugins: [dts({
+          // @ts-expect-error : they have their own build configuration
+          outdir: join(BUILD_FOLDER, "server"),
+          root: join(BUILD_FOLDER)
+        })],
         splitting: true,
         target: "bun"
       });
 
-      await rm(entrypoint);
+      // make sure to cleanup!
+      await entry.delete();
 
+      // show some information for the console...
       for (const bundle of bundles.outputs) {
         console.log(
           relative(PROJECT_PATH, bundle.path),
