@@ -17,12 +17,15 @@ export const createBuild = async (): Promise<void> => {
 
   await build({
     build: {
+      copyPublicDir: true,
+      emptyOutDir: true,
       outDir: join(BUILD_FOLDER, "client")
     },
     define: config?.define,
     plugins: [
       ...(config?.plugins ?? []),
       tsconfig({ root: PROJECT_PATH }), elysia(), router(), solid()
-    ]
+    ],
+    publicDir: join(PROJECT_PATH, "public")
   });
 };

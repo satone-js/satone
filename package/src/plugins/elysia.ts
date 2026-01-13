@@ -98,9 +98,8 @@ export const elysia = (): Plugin => {
       const now = Date.now();
       console.log("\n");
 
-      // Let's create `.satone` production build folder.
-      await rm(BUILD_FOLDER, { force: true, recursive: true });
-      await mkdir(BUILD_FOLDER);
+      // cleanup previous builds.
+      await rm(join(BUILD_FOLDER, "server"), { force: true, recursive: true });
 
       const entrypoint = join(BUILD_FOLDER, "index.ts");
       await Bun.write(entrypoint, generateProdServerFile());
