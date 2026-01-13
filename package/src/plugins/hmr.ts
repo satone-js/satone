@@ -1,9 +1,10 @@
 import type { Plugin } from "vite";
+import type { SatoneConfig } from "../config";
 import { reload } from "../server/reload";
 import { setServerState, state } from "../server/state";
 import { setsAreEqual } from "../utils/sets";
 
-export const hmr = (): Plugin => {
+export const hmr = (config?: SatoneConfig): Plugin => {
   return {
     async handleHotUpdate(ctx) {
       // Keep trace of the previous rendered routes.
@@ -11,7 +12,7 @@ export const hmr = (): Plugin => {
 
       // Clear the imports cache and reload Elysia.
       Loader.registry.clear();
-      setServerState(await reload());
+      setServerState(await reload(config));
 
       // Only full reload the webpage when rendered routes changed.
       if (!setsAreEqual(state.renderables, previousRenderables)) {

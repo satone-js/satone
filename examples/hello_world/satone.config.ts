@@ -1,5 +1,8 @@
 import { defineConfig } from "satone/config";
 
 export default defineConfig({
-  plugins: []
+  plugins: [],
+  swagger: {
+    path: "api"
+  }
 });

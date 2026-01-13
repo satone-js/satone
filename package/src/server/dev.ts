@@ -18,7 +18,7 @@ export const createDevServer = async (): Promise<ViteDevServer> => {
     optimizeDeps: { exclude: ["satone"] },
     plugins: [
       ...(config?.plugins ?? []),
-      tsconfig({ root: PROJECT_PATH }), hmr(), elysia(), router(), solid()
+      tsconfig({ root: PROJECT_PATH }), hmr(config), elysia(config), router(config), solid()
     ]
   });
 

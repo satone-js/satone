@@ -1,6 +1,7 @@
-import type { Plugin } from "vite";
-import { mkdir, rm, writeFile } from "node:fs/promises";
+import type { Connect, Plugin } from "vite";
+import type { SatoneConfig } from "../config";
 
+import { rm } from "node:fs/promises";
 import { join, relative } from "node:path";
 import { Readable } from "node:stream";
 import generate from "@babel/generator";
@@ -14,28 +15,51 @@ import {
 import {
   BUILD_FOLDER,
   PROJECT_PATH,
-  ROUTES_PATH,
-  SERVER_FOLDER
+  ROUTES_PATH
 } from "../utils/constants";
 
-export const elysia = (): Plugin => {
+export const elysia = (config?: SatoneConfig): Plugin => {
+  const toURL = (req: Connect.IncomingMessage): URL => {
+    const rawUrl = req.url ?? "/";
+    const host = req.headers?.host ?? "localhost";
+    return new URL(rawUrl, `http://${host}`);
+  };
+
+  /** know whether we're on a server handled route */
+  const hasRoute = (path: string, method: string): boolean =>
+    state.elysia.routes.some((route) => route.path === path && route.method === method);
+
+  /** know whether we're on the swagger route */
+  const isSwagger = (path: string, method: string): boolean => {
+    path = path.substring(1); // @see https://github.com/elysiajs/elysia-openapi/pull/243
+    return Boolean(config && config.swagger && (config.swagger.path === path || config.swagger.path + "/json" === path) && method === "GET");
+  };
+
+  const toBodyStream = (req: Connect.IncomingMessage, method: string): null | ReadableStream => {
+    if (method === "GET" || method === "HEAD") return null;
+
+    return new ReadableStream({
+      start(controller) {
+        req.on("data", (chunk: Uint8Array) => controller.enqueue(chunk));
+        req.on("end", () => controller.close());
+        req.on("error", (err: unknown) => controller.error(err));
+      }
+    });
+  };
+
   return {
     configureServer(server) {
       server.middlewares.use(async (hreq, hres, next) => {
-        const path = hreq.url || "/";
-        const host = hreq.headers.host || "localhost";
-        const url = new URL(`http://${host}${path}`);
+        const method = hreq.method ?? "GET";
+        const url = toURL(hreq);
 
         const executable = state.executables.find(
           ([_, pattern]) => pattern.test(url)
-        );
+        ); ;
 
         if (
-          !executable
-          || !state.elysia.routes.find((route) =>
-            route.path === executable[0]
-            && route.method === hreq.method
-          )
+          (!executable || !hasRoute(executable[0] /** .path */, method))
+          && !isSwagger(url.pathname, method)
         ) {
           next();
           return;
@@ -44,30 +68,11 @@ export const elysia = (): Plugin => {
         try {
           const headers = new Headers();
           for (let i = 0; i < hreq.rawHeaders.length; i += 2) {
-            const key = hreq.rawHeaders[i]!;
-            const value = hreq.rawHeaders[i + 1]!;
-            headers.append(key, value);
-          }
-
-          let body: null | ReadableStream = null;
-          if (hreq.method !== "GET" && hreq.method !== "HEAD") {
-            body = new ReadableStream({
-              start(controller) {
-                hreq.on("data", (chunk) => {
-                  controller.enqueue(chunk);
-                });
-                hreq.on("end", () => {
-                  controller.close();
-                });
-                hreq.on("error", (err) => {
-                  controller.error(err);
-                });
-              }
-            });
+            headers.append(hreq.rawHeaders[i]!, hreq.rawHeaders[i + 1]!);
           }
 
           const req = new Request(url.href, {
-            body,
+            body: toBodyStream(hreq, method),
             headers,
             method: hreq.method
           });
@@ -88,13 +93,13 @@ export const elysia = (): Plugin => {
           else hres.end();
         }
         catch (error) {
-          console.error("next():", error);
+          console.error(new Date(), "next:", error);
           next();
         }
       });
     },
     enforce: "pre",
-    async generateBundle(client) {
+    async generateBundle() {
       const now = Date.now();
       console.log("\n");
 

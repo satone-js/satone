@@ -1,12 +1,12 @@
 import type { Plugin } from "vite";
+import type { SatoneConfig } from "../config";
 import { watch } from "node:fs";
 import pages from "vite-plugin-pages";
-import { mapRouteNameByPath } from "../generator/route";
 import { reload } from "../server/reload";
 import { setServerState, state } from "../server/state";
 import { ROUTES_PATH } from "../utils/constants";
 
-export const router = (): Plugin[] => {
+export const router = (config?: SatoneConfig): Plugin[] => {
   return [
     pages({
       dirs: [ROUTES_PATH],
@@ -36,7 +36,7 @@ export const router = (): Plugin[] => {
     }),
     {
       async configureServer() {
-        const process = async (): Promise<void> => setServerState(await reload());
+        const process = async (): Promise<void> => setServerState(await reload(config));
 
         // NOTE: we manually watch (not with chokidar) because for some
         //       reason Vite does not catch all updates...

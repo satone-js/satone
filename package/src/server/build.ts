@@ -10,10 +10,10 @@ import { reload } from "./reload";
 import { setServerState } from "./state";
 
 export const createBuild = async (): Promise<void> => {
-  // Let's create a dummy Elysia server and grab the routes state.
-  setServerState(await reload());
-
   const config = await loadConfig();
+
+  // Let's create a dummy Elysia server and grab the routes state.
+  setServerState(await reload(config));
 
   await build({
     build: {
@@ -24,7 +24,7 @@ export const createBuild = async (): Promise<void> => {
     define: config?.define,
     plugins: [
       ...(config?.plugins ?? []),
-      tsconfig({ root: PROJECT_PATH }), elysia(), router(), solid()
+      tsconfig({ root: PROJECT_PATH }), elysia(config), router(config), solid()
     ],
     publicDir: join(PROJECT_PATH, "public")
   });

@@ -1,8 +1,9 @@
+import type { SatoneConfig } from "../config";
 import { mkdir, readFile, rm } from "node:fs/promises";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import generate from "@babel/generator";
 import traverse from "@babel/traverse";
-import swagger from "@elysiajs/swagger";
+import openapi from "@elysiajs/openapi";
 import { build } from "bun";
 import { type AnyElysia, Elysia } from "elysia";
 import { mapRouteNameByPath, removeFileExtension } from "../generator/route";
@@ -25,7 +26,7 @@ export type Executable = [path: string, pattern: URLPattern, bundle: string];
  * Also looks up if these routes should be handled by
  * SolidJS or not.
  */
-export const reload = async (): Promise<{
+export const reload = async (config?: SatoneConfig): Promise<{
   elysia: AnyElysia;
   executables: Array<Executable>;
   renderables: Set<string>;
@@ -38,7 +39,14 @@ export const reload = async (): Promise<{
   const renderables = new Set<string>();
   const server: Array<string> = [];
 
-  let elysia = new Elysia().use(swagger());
+  let elysia = new Elysia();
+
+  if (config?.swagger) {
+    elysia = elysia.use(openapi({
+      path: config.swagger.path,
+      specPath: "/" + config.swagger.path + "/json"
+    }));
+  }
 
   for await (const file of GLOB.scan(ROUTES_PATH)) {
     const path = join(ROUTES_PATH, file);
