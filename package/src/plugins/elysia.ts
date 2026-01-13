@@ -124,9 +124,6 @@ export const elysia = (): Plugin => {
       }
 
       console.log(`✓ built in ${Date.now() - now}ms\n`);
-
-      // Let's now manipulate the destination of the Vite output!
-      client.dir = join(BUILD_FOLDER, "client");
     },
 
     name: "@satone/elysia",

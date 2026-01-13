@@ -1,10 +1,11 @@
+import { join } from "node:path";
 import { build } from "vite";
 import solid from "vite-plugin-solid";
 import tsconfig from "vite-tsconfig-paths";
 import { loadConfig } from "../config/load";
 import { elysia } from "../plugins/elysia";
 import { router } from "../plugins/router";
-import { PROJECT_PATH } from "../utils/constants";
+import { BUILD_FOLDER, PROJECT_PATH } from "../utils/constants";
 import { reload } from "./reload";
 import { setServerState } from "./state";
 
@@ -15,6 +16,9 @@ export const createBuild = async (): Promise<void> => {
   const config = await loadConfig();
 
   await build({
+    build: {
+      outDir: join(BUILD_FOLDER, "client")
+    },
     define: config?.define,
     plugins: [
       ...(config?.plugins ?? []),
