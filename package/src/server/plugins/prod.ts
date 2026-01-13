@@ -14,7 +14,8 @@ export const prod = (serverDirectory: string) => {
         prefix: "/"
       })
     )
-    .onError(({ code }) => {
-      if (code === "NOT_FOUND") return Bun.file(FRONTEND_ENTRYPOINT);
+    .onError(({ code, status }) => {
+      if (code === "NOT_FOUND")
+        return status(200, Bun.file(FRONTEND_ENTRYPOINT));
     });
 };
