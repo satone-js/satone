@@ -55,7 +55,7 @@
     "@elysiajs/openapi": "^1.4.13",
     "@elysiajs/static": "^1.4.7",
     "bun-plugin-dtsx": "^0.9.9",
-    "elysia": "^1.4.21",
+    "elysia": "^1.4.22",
     "vite": "7.3.1",
     "vite-plugin-pages": "^0.33.2",
     "vite-plugin-solid": "^2.11.10",
